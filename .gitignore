@@ -1,0 +1,5 @@
+.codex/
+*.png
+playwright-snapshot.md
+Thumbs.db
+Desktop.ini
