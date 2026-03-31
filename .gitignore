@@ -3,3 +3,8 @@
 playwright-snapshot.md
 Thumbs.db
 Desktop.ini
+node_modules/
+dist/
+.vite-dev.log
+.vite-dev.err
+headless-dom.html

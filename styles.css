@@ -747,12 +747,14 @@ body.is-dispersed .hero__lead {
 .poem-panel {
   position: fixed;
   top: 0;
-  right: 0;
+  left: 50%;
+  right: auto;
   bottom: 0;
-  width: var(--poem-panel-width, min(46vw, 720px));
+  transform: translateX(-50%);
+  width: var(--poem-panel-width, min(72vw, 920px));
   max-width: calc(100vw - 24px);
   z-index: 28;
-  padding: 34px 18px 26px 0;
+  padding: 34px 12px 26px;
   pointer-events: none;
   transition: width 320ms ease;
 }
@@ -785,7 +787,20 @@ body.is-dispersed .hero__lead {
   border-right-width: 3px;
   border-radius: 36px 12px 36px 12px;
   background:
-    linear-gradient(180deg, rgba(18, 12, 8, 0.82), rgba(18, 12, 8, 0.88) 38%, rgba(18, 12, 8, 0.74));
+    radial-gradient(circle at 18% 14%, rgba(214, 170, 96, 0.1) 0, transparent 24%),
+    radial-gradient(circle at 78% 76%, rgba(128, 87, 36, 0.12) 0, transparent 28%),
+    linear-gradient(180deg, rgba(58, 41, 24, 0.14), rgba(18, 12, 8, 0) 22%, rgba(0, 0, 0, 0.18) 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 235, 196, 0.015) 0 1px,
+      rgba(0, 0, 0, 0) 1px 5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(210, 171, 103, 0.018) 0 1px,
+      rgba(0, 0, 0, 0) 1px 7px
+    ),
+    linear-gradient(180deg, rgba(24, 17, 11, 0.95), rgba(30, 20, 12, 0.92) 38%, rgba(20, 13, 9, 0.88));
   box-shadow:
     inset 0 0 0 1px rgba(255, 236, 196, 0.08),
     inset 18px 0 24px rgba(184, 133, 55, 0.12),
@@ -798,12 +813,20 @@ body.is-dispersed .hero__lead {
   position: absolute;
   inset: 30px 22px 30px 26px;
   background:
+    radial-gradient(circle at 14% 20%, rgba(255, 228, 176, 0.06) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 64%, rgba(94, 62, 24, 0.12) 0 1.6px, transparent 3px),
+    radial-gradient(circle at 48% 42%, rgba(214, 174, 104, 0.05) 0 1px, transparent 2px),
     radial-gradient(circle at top center, rgba(238, 205, 143, 0.8) 0 2px, transparent 3px),
     radial-gradient(circle at bottom center, rgba(238, 205, 143, 0.8) 0 2px, transparent 3px),
-    linear-gradient(180deg, rgba(231, 193, 118, 0), rgba(231, 193, 118, 0.42), rgba(231, 193, 118, 0));
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-size: 100% 10px, 100% 10px, 1px 100%;
-  background-position: center top, center bottom, center center;
+    linear-gradient(180deg, rgba(231, 193, 118, 0), rgba(231, 193, 118, 0.42), rgba(231, 193, 118, 0)),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 240, 208, 0.012) 0 2px,
+      rgba(0, 0, 0, 0) 2px 10px
+    );
+  background-repeat: repeat, repeat, repeat, no-repeat, no-repeat, no-repeat, repeat;
+  background-size: auto, auto, auto, 100% 10px, 100% 10px, 1px 100%, auto;
+  background-position: 0 0, 0 0, 0 0, center top, center bottom, center center, 0 0;
   mask: linear-gradient(90deg, transparent 0, black 3%, black 97%, transparent 100%);
   pointer-events: none;
 }
@@ -811,7 +834,8 @@ body.is-dispersed .hero__lead {
 .poem-panel__header {
   position: absolute;
   top: 50%;
-  right: 30px;
+  right: 28px;
+  left: auto;
   bottom: auto;
   display: flex;
   align-items: center;
@@ -852,11 +876,15 @@ body.is-dispersed .hero__lead {
   writing-mode: vertical-rl;
   text-orientation: upright;
   font-family: var(--font-poem);
-  line-height: 1.8;
-  letter-spacing: 0.18em;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.52);
   white-space: pre-line;
   text-align: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
 }
 
 .poem-panel__eyebrow {
@@ -864,35 +892,135 @@ body.is-dispersed .hero__lead {
   color: rgba(245, 231, 201, 0.86);
 }
 
+.poem-panel__title-text {
+  font-size: 1.68rem;
+  letter-spacing: 0.08em;
+  color: rgba(250, 236, 205, 0.96);
+  text-shadow:
+    0 0 18px rgba(225, 180, 89, 0.18),
+    0 3px 14px rgba(0, 0, 0, 0.38);
+}
+
+.poem-panel__author-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  min-height: 4.5em;
+  min-width: 2.35em;
+  border-radius: 3px;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(255, 214, 214, 0.18) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 68%, rgba(96, 8, 8, 0.22) 0 1.2px, transparent 2px),
+    linear-gradient(180deg, rgba(151, 26, 26, 0.97), rgba(116, 15, 15, 0.98));
+  border: 1px solid rgba(97, 9, 9, 0.84);
+  color: rgba(255, 244, 233, 0.95);
+  box-shadow:
+    0 5px 12px rgba(77, 10, 10, 0.24),
+    inset 0 0 0 1px rgba(255, 197, 197, 0.14),
+    inset 0 1px 2px rgba(255, 240, 240, 0.06);
+  font-size: 0.94rem;
+  letter-spacing: 0.05em;
+  line-height: 1.02;
+  text-shadow: 0 1px 0 rgba(85, 11, 11, 0.18);
+}
+
 .poem-panel__columns {
-  display: flex;
-  flex-direction: row-reverse;
+  position: relative;
+  display: block;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  gap: var(--poem-column-gap, 14px);
-  align-items: center;
-  justify-content: flex-start;
-  padding-right: 80px;
-  padding-left: 18px;
-  padding-top: 0;
+  padding-right: 8px;
+  padding-left: 8px;
+  padding-top: 12px;
   padding-bottom: 14px;
   min-height: 0;
   height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(234, 194, 112, 0.9) rgba(20, 13, 9, 0.68);
   cursor: grab;
+  touch-action: pan-x;
   user-select: none;
-  touch-action: none;
+  scrollbar-width: none;
+}
+
+.poem-panel__stage {
+  position: relative;
+  width: max-content;
+  height: 100%;
+  min-height: 100%;
+  opacity: 1;
+  transition: opacity 420ms ease;
+}
+
+.poem-panel__stage-canvas,
+.poem-panel__text-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.poem-panel__stage-canvas {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.poem-panel__text-layer {
+  pointer-events: none;
+}
+
+.poem-panel__line {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  font-family: var(--font-poem);
+  color: rgba(247, 233, 200, 0.94);
+  text-shadow:
+    0 0 18px rgba(226, 187, 112, 0.12),
+    0 3px 14px rgba(0, 0, 0, 0.42);
+}
+
+.poem-panel__glyph {
+  display: block;
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+  filter: blur(10px);
+  transition:
+    opacity 320ms ease,
+    transform 460ms ease,
+    filter 460ms ease;
+}
+
+.poem-panel__glyph.is-active {
+  opacity: var(--glyph-progress, 0);
+  transform: translateY(calc((1 - var(--glyph-progress, 0)) * 8px)) scale(calc(0.96 + var(--glyph-progress, 0) * 0.04));
+  filter: blur(calc((1 - var(--glyph-progress, 0)) * 10px));
+}
+
+.poem-panel__glyph.is-fading {
+  opacity: 0;
+  transform: translateX(16px);
+  filter: blur(12px);
 }
 
 .poem-panel__columns::-webkit-scrollbar {
-  height: 12px;
+  height: 0;
 }
 
-.poem-panel__columns::-webkit-scrollbar-track {
+.poem-panel__columns.is-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(234, 194, 112, 0.9) rgba(20, 13, 9, 0.68);
+}
+
+.poem-panel__columns.is-scrollable::-webkit-scrollbar {
+  height: 10px;
+}
+
+.poem-panel__columns.is-scrollable::-webkit-scrollbar-track {
   background:
     linear-gradient(180deg, rgba(20, 13, 9, 0.76), rgba(34, 23, 14, 0.76)),
     linear-gradient(90deg, rgba(226, 183, 103, 0.1), rgba(226, 183, 103, 0.02));
@@ -902,7 +1030,7 @@ body.is-dispersed .hero__lead {
     inset 0 1px 4px rgba(0, 0, 0, 0.28);
 }
 
-.poem-panel__columns::-webkit-scrollbar-thumb {
+.poem-panel__columns.is-scrollable::-webkit-scrollbar-thumb {
   background:
     linear-gradient(180deg, rgba(251, 226, 165, 0.96), rgba(220, 168, 79, 0.94) 58%, rgba(154, 99, 37, 0.96));
   border-radius: 999px;
@@ -912,7 +1040,7 @@ body.is-dispersed .hero__lead {
     inset 0 1px 0 rgba(255, 238, 204, 0.36);
 }
 
-.poem-panel__columns::-webkit-scrollbar-thumb:hover {
+.poem-panel__columns.is-scrollable::-webkit-scrollbar-thumb:hover {
   background:
     linear-gradient(180deg, rgba(255, 234, 182, 1), rgba(232, 182, 92, 0.98) 58%, rgba(168, 106, 38, 0.98));
 }
@@ -1105,6 +1233,7 @@ body.is-dispersed .hero__lead {
   .poem-panel {
     left: 12px;
     right: 12px;
+    transform: none;
     width: auto;
     max-width: none;
     padding: 104px 0 18px;
@@ -1115,13 +1244,15 @@ body.is-dispersed .hero__lead {
   }
 
   .poem-panel__columns {
-    justify-content: flex-start;
-    padding-right: 78px;
+    padding-right: 6px;
+    padding-left: 6px;
+    padding-top: 12px;
     padding-bottom: 12px;
   }
 
   .poem-panel__header {
-    right: 26px;
+    right: 20px;
+    left: auto;
   }
 }
 

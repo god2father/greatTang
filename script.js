@@ -1,4 +1,5 @@
 import * as THREE from "./assets/vendor/three.module.js";
+import { SandPoemSystem } from "./src/sand-poem-system.js";
 
 const poets = [
   {
@@ -163,7 +164,8 @@ const poemLibrary = {
 
 const state = {
   currentId: null,
-  dispersed: false
+  dispersed: false,
+  currentPoem: null
 };
 
 const positions = [];
@@ -172,6 +174,18 @@ let poemAutoScrollFrame = 0;
 let poemAutoScrollTarget = 0;
 let poemUserDragging = false;
 let poemManualOverride = false;
+let poemRenderTimer = 0;
+let poemClearTimer = 0;
+
+function updatePoemScrollState() {
+  const isScrollable = poemColumns.scrollWidth - poemColumns.clientWidth > 2;
+  poemColumns.classList.toggle("is-scrollable", isScrollable);
+
+  if (!isScrollable) {
+    poemAutoScrollTarget = 0;
+    poemColumns.scrollLeft = 0;
+  }
+}
 
 function isPanelInteractionTarget(target) {
   return Boolean(target && target.closest && target.closest(".poet-node, .detail-panel, .poem-panel"));
@@ -434,6 +448,7 @@ class RiverSystem {
 }
 
 const riverSystem = new RiverSystem(riverCanvas);
+const sandPoemSystem = new SandPoemSystem(poemColumns);
 
 function revealExperience() {
   document.body.classList.add("is-ready");
@@ -444,91 +459,140 @@ function revealExperience() {
   });
 }
 
+function setPoemHeader(title, author) {
+  poemTitle.innerHTML = `
+    <span class="poem-panel__title-text">${title}</span>
+    <span class="poem-panel__author-seal">${author}</span>
+  `;
+}
+
+function cancelPendingPoemTimers() {
+  if (poemRenderTimer) {
+    window.clearTimeout(poemRenderTimer);
+    poemRenderTimer = 0;
+  }
+
+  if (poemClearTimer) {
+    window.clearTimeout(poemClearTimer);
+    poemClearTimer = 0;
+  }
+}
+
+function mountPoem(config) {
+  cancelPendingPoemTimers();
+  setPoemHeader(config.title, config.author ?? "");
+  poemPanel.classList.remove("hidden");
+  poemPanel.style.setProperty("--poem-panel-width", `${Math.round(config.panelWidth)}px`);
+  poemPanel.style.setProperty("--poem-column-size", `${config.fontSize.toFixed(2)}px`);
+  poemPanel.style.setProperty("--poem-column-gap", `${config.columnGap}px`);
+  poemColumns.scrollLeft = 0;
+  poemManualOverride = false;
+  stopPoemAutoScroll();
+
+  if (window.innerWidth > 640) {
+    const detailShift = Math.min(220, config.panelWidth * 0.26);
+    detailPanel.style.left = `calc(50% - ${Math.round(detailShift)}px)`;
+  }
+
+  requestAnimationFrame(() => {
+    sandPoemSystem.setPoem({
+      text: config.text,
+      lines: config.lines,
+      columnGap: config.columnGap,
+      columnWidth: config.columnWidth,
+      fontSize: config.fontSize,
+      stageWidth: config.stageWidth,
+      stageHeight: config.stageHeight,
+      sampleStep: config.sampleStep,
+      totalChars: config.totalChars,
+      onProgress: syncPoemScroll
+    });
+    updatePoemScrollState();
+    syncPoemScroll(0, config.totalChars);
+    startPoemAutoScroll();
+  });
+}
+
 function renderPoem(poetName, workTitle) {
   const poemText = poemLibrary[workTitle];
   const plainTitle = workTitle.replace(/[《》]/g, "");
   if (!poemText) {
-    poemPanel.classList.add("hidden");
-    poemColumns.innerHTML = "";
-    poemTitle.textContent = "";
-    poemPanel.style.removeProperty("--poem-panel-width");
+    clearPoem(true);
     return;
   }
 
-  poemTitle.textContent = `${plainTitle} ${poetName}`;
-  poemColumns.innerHTML = "";
-  poemPanel.classList.remove("hidden");
-
   const lines = poemText.split("\n");
-  const titleReserve = window.innerWidth <= 640 ? 92 : 128;
-  const sidePadding = window.innerWidth <= 640 ? 52 : 112;
-  const columnGap = lines.length >= 40 ? 8 : lines.length >= 18 ? 10 : 14;
+  const isMobile = window.innerWidth <= 640;
+  const longestLineChars = lines.reduce((max, line) => {
+    return Math.max(max, Array.from(line).length);
+  }, 0);
+  const columnGap = lines.length >= 24 ? 8 : lines.length >= 12 ? 10 : 14;
   const fontSizePx =
     lines.length >= 24 ? 24.6 :
     lines.length >= 12 ? 25.9 :
     lines.length >= 9 ? 27.2 :
     28.5;
-  const columnFootprint = fontSizePx * 1.72;
-  const contentWidth =
-    lines.length * columnFootprint + Math.max(0, lines.length - 1) * columnGap;
-  const targetWidth = Math.max(
-    window.innerWidth <= 640 ? 168 : 420,
-    Math.min(window.innerWidth - 24, titleReserve + sidePadding + contentWidth)
+  const columnFootprint = fontSizePx * 1.58;
+  const contentWidth = Math.round(
+    lines.length * columnFootprint + Math.max(0, lines.length - 1) * columnGap,
   );
-  const columnSize = `${fontSizePx.toFixed(2)}px`;
+  const headerReserve = isMobile ? 80 : 116;
+  const innerPadding = isMobile ? 52 : 72;
+  const maxPanelWidth = window.innerWidth - 24;
+  const panelWidth = Math.max(
+    isMobile ? 188 : 360,
+    Math.min(maxPanelWidth, contentWidth + headerReserve + innerPadding)
+  );
   const totalChars = lines.reduce((sum, line) => sum + Array.from(line).length, 0);
-  let typedChars = 0;
-  poemPanel.style.setProperty("--poem-panel-width", `${Math.round(targetWidth)}px`);
-  poemPanel.style.setProperty("--poem-column-size", columnSize);
-  poemPanel.style.setProperty("--poem-column-gap", `${columnGap}px`);
-  poemColumns.scrollLeft = 0;
-  poemManualOverride = false;
-  stopPoemAutoScroll();
-  let delay = 0;
 
-  lines.forEach((line) => {
-    const column = document.createElement("div");
-    column.className = "poem-panel__column";
-
-    Array.from(line).forEach((char) => {
-      const span = document.createElement("span");
-      span.className = "poem-panel__char";
-      span.style.animationDelay = `${delay}ms`;
-      span.style.setProperty("--ink-opacity", (0.62 + Math.random() * 0.34).toFixed(2));
-      span.style.setProperty("--ink-blur", `${(Math.random() * 0.75).toFixed(2)}px`);
-      span.style.setProperty("--ink-shift", `${(-4 + Math.random() * 8).toFixed(2)}px`);
-      span.textContent = char;
-      span.addEventListener(
-        "animationend",
-        () => {
-          typedChars += 1;
-          syncPoemScroll(typedChars, totalChars);
-        },
-        { once: true }
-      );
-      delay += 58;
-      column.appendChild(span);
-    });
-
-    poemColumns.appendChild(column);
-  });
-
-  requestAnimationFrame(() => {
-    syncPoemScroll(0, totalChars);
-    startPoemAutoScroll();
+  state.currentPoem = { poetName, workTitle };
+  mountPoem({
+    title: plainTitle,
+    author: poetName,
+    text: poemText,
+    panelWidth,
+    lines,
+    stageWidth: Math.max(160, panelWidth - headerReserve - (isMobile ? 14 : 18)),
+    stageHeight: Math.max(
+      isMobile ? window.innerHeight * 0.52 : window.innerHeight * 0.62,
+      Math.min(window.innerHeight - 84, longestLineChars * fontSizePx * 1.5 + 156),
+    ),
+    fontSize: fontSizePx,
+    columnGap,
+    columnWidth: columnFootprint,
+    columnPaddingTop: 0,
+    columnPaddingRight: 0,
+    lineHeight: fontSizePx * 1.6,
+    sampleStep: Math.max(2, Math.min(4, Math.round(fontSizePx / 10))),
+    totalChars,
   });
 }
 
-function clearPoem() {
+function clearPoem(immediate = false) {
+  cancelPendingPoemTimers();
   stopPoemAutoScroll();
   poemManualOverride = false;
+  state.currentPoem = null;
+
+  if (!immediate && sandPoemSystem.hasContent()) {
+    sandPoemSystem.disperse();
+    poemClearTimer = window.setTimeout(() => {
+      clearPoem(true);
+    }, 920);
+    return;
+  }
+
   poemPanel.classList.add("hidden");
-  poemColumns.innerHTML = "";
-  poemTitle.textContent = "";
+  poemTitle.innerHTML = "";
   poemPanel.style.removeProperty("--poem-panel-width");
   poemPanel.style.removeProperty("--poem-column-size");
   poemPanel.style.removeProperty("--poem-column-gap");
   poemColumns.scrollLeft = 0;
+  poemColumns.classList.remove("is-scrollable");
+  sandPoemSystem.reset();
+  if (window.innerWidth > 640 && !detailPanel.classList.contains("hidden")) {
+    detailPanel.style.left = "50%";
+  }
 }
 
 function syncPoemScroll(typedChars, totalChars) {
@@ -538,20 +602,23 @@ function syncPoemScroll(typedChars, totalChars) {
 
   const maxScroll = Math.max(0, poemColumns.scrollWidth - poemColumns.clientWidth);
   if (!maxScroll || !totalChars) {
+    poemColumns.classList.remove("is-scrollable");
     poemAutoScrollTarget = 0;
     poemColumns.scrollLeft = 0;
     return;
   }
+  poemColumns.classList.add("is-scrollable");
 
   const progress = Math.min(1, typedChars / totalChars);
   const visibleRatio = Math.min(1, poemColumns.clientWidth / poemColumns.scrollWidth);
   if (progress <= visibleRatio) {
-    poemAutoScrollTarget = 0;
+    poemAutoScrollTarget = maxScroll;
+    poemColumns.scrollLeft = maxScroll;
     return;
   }
 
   const scrollProgress = (progress - visibleRatio) / Math.max(1 - visibleRatio, 0.0001);
-  poemAutoScrollTarget = -maxScroll * Math.pow(scrollProgress, 0.88);
+  poemAutoScrollTarget = maxScroll * (1 - Math.pow(scrollProgress, 0.88));
 }
 
 function startPoemAutoScroll() {
@@ -620,7 +687,7 @@ function setupPoemDrag() {
     if (Math.abs(deltaX) > 3) {
       dragMoved = true;
     }
-    poemColumns.scrollLeft = startScrollLeft + deltaX;
+    poemColumns.scrollLeft = startScrollLeft - deltaX;
     event.preventDefault();
   });
 
@@ -669,7 +736,7 @@ function setupPoemDrag() {
     if (Math.abs(deltaX) > 3) {
       dragMoved = true;
     }
-    poemColumns.scrollLeft = startScrollLeft + deltaX;
+    poemColumns.scrollLeft = startScrollLeft - deltaX;
     event.preventDefault();
   });
 
@@ -865,6 +932,7 @@ function setupSandCanvas() {
     });
 
     riverSystem.update(state.dispersed);
+    sandPoemSystem.update();
     animationId = requestAnimationFrame(draw);
   };
 
@@ -875,9 +943,14 @@ function setupSandCanvas() {
 
   window.addEventListener("resize", () => {
     cancelAnimationFrame(animationId);
+    const activePoem = state.currentPoem ? { ...state.currentPoem } : null;
     resize();
     if (state.currentId !== null) {
       openDetail(state.currentId);
+    }
+    sandPoemSystem.resize();
+    if (activePoem) {
+      renderPoem(activePoem.poetName, activePoem.workTitle);
     }
     draw();
   });
